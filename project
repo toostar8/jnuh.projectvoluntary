@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>카페인 권장량 계산기</title>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    background:#f5f5f5;
+    padding:20px;
+    text-align:center;
+}
+
+.container{
+    max-width:800px;
+    margin:auto;
+    background:white;
+    padding:30px;
+    border-radius:15px;
+    box-shadow:0 0 10px rgba(0,0,0,0.15);
+}
+
+select,input{
+    padding:10px;
+    margin:10px;
+    width:220px;
+}
+
+button{
+    padding:10px 20px;
+    border:none;
+    border-radius:8px;
+    background:#4CAF50;
+    color:white;
+    cursor:pointer;
+}
+
+.drink{
+    border:1px solid #ddd;
+    border-radius:12px;
+    padding:15px;
+    margin-top:15px;
+}
+
+.drink img{
+    width:180px;
+    height:180px;
+    object-fit:cover;
+    border-radius:10px;
+}
+
+.modal{
+    display:none;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.7);
+    justify-content:center;
+    align-items:center;
+}
+
+.modal-content{
+    background:white;
+    padding:30px;
+    border-radius:15px;
+}
+
+a{
+    text-decoration:none;
+}
+</style>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBAnurDLvmuLwy_0X8xS4RdJnBrpWAipHo",
+  authDomain: "jnuh-projectvoluntary.firebaseapp.com",
+  databaseURL: "https://jnuh-projectvoluntary-default-rtdb.firebaseio.com",
+  projectId: "jnuh-projectvoluntary",
+  storageBucket: "jnuh-projectvoluntary.firebasestorage.app",
+  messagingSenderId: "149671845029",
+  appId: "1:149671845029:web:d200e5ced57456c753014c",
+  measurementId: "G-NZ0Q723XBN"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const counterRef = ref(db,"visitorCount");
+
+runTransaction(counterRef,(current)=>{
+    return (current || 0) + 1;
+}).then((result)=>{
+
+    const count = result.snapshot.val();
+
+    document.getElementById("visitorCount").innerText =
+    "누적 방문자 수 : " + count + "명";
+
+    if(count % 50 === 0){
+        document.getElementById("winnerModal").style.display="flex";
+    }
+});
+
+</script>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>☕ 카페인 권장량 계산기</h1>
+
+<p id="visitorCount">방문자 수 불러오는 중...</p>
+
+<select id="ageGroup">
+<option value="teen">청소년 (14~19세)</option>
+<option value="adult">성인</option>
+</select>
+
+<br>
+
+<input type="number" id="weight" placeholder="몸무게(kg)">
+
+<br>
+
+<button onclick="calculate()">계산하기</button>
+
+<div id="result"></div>
+
+</div>
+
+<div id="winnerModal" class="modal">
+
+<div class="modal-content">
+
+<h2>🎉 당첨!</h2>
+
+<p>50명 단위 방문 이벤트에 당첨되었습니다.</p>
+
+<a href="https://forms.gle/qWQHmmBXyKTXea2G7" target="_blank">
+<button>구글폼으로 이동</button>
+</a>
+
+</div>
+
+</div>
+
+<script>
+
+const drinks = [
+
+{
+name:"코카콜라 355ml",
+caffeine:34,
+price:"2,000원",
+image:"images/coke.jpg"
+},
+
+{
+name:"펩시콜라 355ml",
+caffeine:38,
+price:"2,000원",
+image:"images/pepsi.jpg"
+},
+
+{
+name:"핫식스",
+caffeine:60,
+price:"1,500원",
+image:"images/hotsix.jpg"
+},
+
+{
+name:"레드불",
+caffeine:80,
+price:"2,500원",
+image:"images/redbull.jpg"
+},
+
+{
+name:"스타벅스 카페라떼",
+caffeine:75,
+price:"5,500원",
+image:"images/latte.jpg"
+},
+
+{
+name:"스타벅스 아메리카노",
+caffeine:150,
+price:"4,500원",
+image:"images/americano.jpg"
+},
+
+{
+name:"몬스터 에너지",
+caffeine:100,
+price:"2,800원",
+image:"images/monster.jpg"
+},
+
+{
+name:"칸타타 아메리카노",
+caffeine:90,
+price:"2,000원",
+image:"images/cantata.jpg"
+}
+
+];
+
+function calculate(){
+
+const age =
+document.getElementById("ageGroup").value;
+
+const weight =
+Number(document.getElementById("weight").value);
+
+if(weight <= 0){
+
+alert("몸무게를 입력하세요.");
+return;
+
+}
+
+let limit;
+
+if(age === "teen"){
+
+limit = weight * 2.5;
+
+}else{
+
+limit = weight * 3;
+
+}
+
+let html = `
+<h2>권장 카페인 섭취량</h2>
+<h3>${limit.toFixed(1)} mg</h3>
+<h2>추천 음료</h2>
+`;
+
+const recommended =
+drinks.filter(drink =>
+drink.caffeine <= limit
+);
+
+if(recommended.length === 0){
+
+html += "<p>추천 가능한 음료가 없습니다.</p>";
+
+}else{
+
+recommended.forEach(drink=>{
+
+html += `
+<div class="drink">
+
+<img src="${drink.image}" alt="${drink.name}">
+
+<h3>${drink.name}</h3>
+
+<p>카페인 : ${drink.caffeine}mg</p>
+
+<p>가격 : ${drink.price}</p>
+
+</div>
+`;
+
+});
+
+}
+
+document.getElementById("result").innerHTML =
+html;
+
+}
+
+</script>
+
+</body>
+</html>
