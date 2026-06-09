@@ -105,7 +105,7 @@ runTransaction(counterRef,(current)=>{
     document.getElementById("visitorCount").innerText =
     "누적 방문자 수 : " + count + "명";
 
-    if(count % 50 === 0){
+    if(count % 20 === 0){
         document.getElementById("winnerModal").style.display="flex";
     }
 });
